@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en" xmlns="www.thymeleaf.org" th:replace="normal/base::Layout(~{::section})">
+<head>
+	<meta charset="UTF-8" />
+	<title>This is about page</title>
+</head>
+<body>
+	<section>
+		<div class="container">
+			<div class="card">
+				<div class="card-body my-5">
+					<div class="container text-center">
+						<img style="height: 200px; width: 200px;" class="my_profile_picture" th:src="@{'/img/logo1.png'}" alt="profile photo" />
+					</div>
+					
+					
+					<h3 class="my-3">Donate Us</h3>
+					<input id="user_amount" type="text" class="form-control my-3" placeholder="Enter amount here" />
+					
+					<div class="container text-center mt-3">
+						<button class="btn btn-success btn-block" onclick="startPayment()">Pay</button>
+					</div>
+					
+				</div>
+			</div>
+		</div>
+		
+		
+		<script>
+			
+			function initiateClientModule(data){
+				
+				const script = document.createElement("script");
+				script.src = `{https://securegw-stage.paytm.in}/merchantpgpui/checkoutjs/merchants/{cTGubl25190995151468}.js`;
+				script.crossOrigin = `anonymous`;
+				script.onload = () => {
+					var config = {
+					"root": "",
+					"flow": "DEFAULT",
+					"data": {
+					"orderId": data.orderId, /* update order id */
+					"token": data.body.txnToken, /* update token value */
+					"tokenType": "TXN_TOKEN",
+					"amount": data.amount /* update amount */
+					},
+					
+					"merchant":{
+						mid:"",
+						return: false
+					},
+					
+					"handler": {
+					"notifyMerchant": function(eventName,data){
+					console.log("notifyMerchant handler function called");
+					console.log("eventName => ",eventName);
+					console.log("data => ",data);
+					},
+					"transactionStatus":function (data){
+						console.log("transaction completed")
+						console.log(data)
+						
+						if(data.STATUS == "TXN_FAILURE"){
+							alert(data.RESPMSG)
+						}else if(data.STATUS=='TXN_SUCCESS'){
+							alert(data.RESPMSG)
+							
+							//capture api with data : call kar lo...
+							
+						}else{
+							alert("Something went wrong while payment contact to admin !!")
+						}
+						
+						window.Paytm.CheckoutJS.close();
+						
+						}
+					}
+					};
+					if(window.Paytm && window.Paytm.CheckoutJS){
+					window.Paytm.CheckoutJS.onLoad(function excecuteAfterCompleteLoad() {
+					// initialze configuration using init method
+					window.Paytm.CheckoutJS.init(config).then(function onSuccess() {
+					// after successfully updating configuration, invoke JS Checkout
+					window.Paytm.CheckoutJS.invoke();
+					}).catch(function onError(error){
+					console.log("error => ",error);
+					});
+					});
+					}
+					document.body.appendChild(script);
+				}
+				
+				
+				
+				
+				}
+			
+	
+			  async function startPayment(){
+			    //call api to start payment
+			        const amount = document.querySelector("#user_amount").value
+			        
+			        const baseUrl="http:localhost:8080"
+			    
+			    /**
+			        const response = await fetch(`${baseUrl}/payment/start`,{
+					
+				*/	
+						
+					const response = await fetch(`/payment/start`,{
+			            method:'POST',
+			            headers:{
+			                'Content-type':'application/json'
+			            },
+			            body: JSON.stringify({'amount': amount})
+			        })
+			    
+			        response.json().then(data => {
+			            //order is generated successfully..
+			            console.log(data)
+			            
+			            initiateClientModule(data);
+			            
+			            
+			        }).catch(error => {
+			            console.log(error)
+			            alert("error in initiating payment")
+			        })
+			    }
+		</script>
+		
+		
+		<!--
+		<script>
+			$(document).ready(()=>{
+				$(".item").removeClass("active");
+				$("#home-link").addClass("active");
+			});
+		</script>
+		-->
+		
+		
+	</section>
+</body>
+</html>
